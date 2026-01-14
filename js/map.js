@@ -19,8 +19,15 @@ function start() {
           [stop.latitude, stop.longitude],
           { hintContent: stop.name }
         );
+        placemark.events.add("click", function () {
+            if (window.onStopClick) {
+                window.onStopClick(stop.id, stop.name);
+            }
+        });
         map.geoObjects.add(placemark);
       });
     });
-
+    .catch(function (err) {
+      console.error("Ошибка загрузки остановок", err);
+    });
 }
