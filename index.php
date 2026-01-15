@@ -35,6 +35,18 @@
         —
       </div>
     </div>
+    <div class="panel-row">
+      <div class="panel-title">Интервалы (каждые 30 минут):</div>
+      <div id="slotsGrid" class="slots-grid muted">
+        Выберите маршрут:
+      </div>
+    </div>
+    <div class="panel-row">
+      <div class="panel-title">Статистика:</div>
+      <div id="statsBox" class="stats-box muted">
+        Выберите интервал
+      </div>
+    </div>
   </div>
 </section>
 
