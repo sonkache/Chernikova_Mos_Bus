@@ -2,6 +2,8 @@
 require_once __DIR__ . "/config.php";
 session_start();
 $isAuth = isset($_SESSION["user_id"]);
+$userName = $isAuth ? ($_SESSION["name"] ?? "") : "";
+$userStatus = $isAuth ? ($_SESSION["status"] ?? "active") : "";
 ?>
 <!DOCTYPE html>
 <html lang="ru">
@@ -18,6 +20,9 @@ $isAuth = isset($_SESSION["user_id"]);
     <a href="/">Главная</a>
 
     <?php if ($isAuth): ?>
+     <span class="hello">
+            Здравствуйте, <?= htmlspecialchars($userName ?: "пользователь") ?>
+          </span>
       <a href="/favorites.php">Избранное</a>
       <a href="/auth/logout.php">Выход</a>
     <?php else: ?>
@@ -76,6 +81,8 @@ $isAuth = isset($_SESSION["user_id"]);
 
 <script>
   window.IS_AUTH = <?= $isAuth ? "true" : "false" ?>;
+  window.USER_NAME = <?= json_encode($userName) ?>;
+  window.USER_STATUS = <?= json_encode($userStatus) ?>;
 </script>
 
 <script src="https://api-maps.yandex.ru/2.1/?apikey=07131a5d-203a-4059-89aa-fb4a2eceefdb&lang=ru_RU"></script>
