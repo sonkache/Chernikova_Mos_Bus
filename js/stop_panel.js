@@ -1,5 +1,15 @@
 let currentStopId = null;
 let currentRoute = null;
+async function loadFavorites(stopId) {
+  try {
+    const res = await fetch("/api/favorites_list.php?stop_id=" + stopId);
+    const data = await res.json();
+    if (!data.ok) return [];
+    return data.routes || [];
+  } catch (e) {
+    return [];
+  }
+}
 window.onStopClick = async function(stopId, stopName) {
   const panel = document.getElementById("stopPanel");
   const title = document.getElementById("stopTitle");
@@ -23,9 +33,13 @@ window.onStopClick = async function(stopId, stopName) {
     routesBox.innerHTML = "<span class='muted'>Маршрутов нет</span>";
     return;
   }
+  const favoriteRoutes = await loadFavorites(stopId);
   let html = "";
   data.routes.forEach(function (r) {
-    html += '<button class="routeBtn" data-route="' + r + '">' + r + "</button>";
+    const isFav = favoriteRoutes.includes(r);
+    html += '<button class="routeBtn" data-route="' + r + '">' + r + "</button>" + '<button class="favBtn ' +
+    active + '" data-route="' + r + '" title="Избранное">★</button>' + "</div>";
+
   });
   routesBox.innerHTML = html;
   document.querySelectorAll(".routeBtn").forEach(function (btn) {
@@ -33,6 +47,26 @@ window.onStopClick = async function(stopId, stopName) {
       onRouteClick(this.dataset.route);
     });
   });
+    document.querySelectorAll(".favBtn").forEach(function (btn) {
+      btn.addEventListener("click", async function (e) {
+        e.stopPropagation();
+        const route = btn.dataset.route;
+        const res = await fetch("/api/toggle_favorite.php", {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({
+            stop_id: currentStopId,
+            route_name: route
+          })
+        });
+        const data = await res.json();
+        if (!data.ok) {
+          alert(data.error || "Ошибка добавления в избранное");
+          return;
+        }
+        btn.classList.toggle("active", data.is_favorite);
+      });
+    });
   panel.scrollIntoView({ behavior: "smooth", block: "start" });
 };
 
