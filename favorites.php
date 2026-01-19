@@ -10,7 +10,7 @@ if (!isset($_SESSION["user_id"])) {
 $user_id = (int)$_SESSION["user_id"];
 
 $rows = dbQuery("
-  SELECT f.id, f.stop_id, f.route_name, f.created_at, s.name AS stop_name
+  SELECT f.id, f.stop_id, f.route_name, f.created_at, s.name AS stop_name, s.latitude, s.longitude
   FROM favorites f
   LEFT JOIN stops s ON s.id = f.stop_id
   WHERE f.user_id = :u
@@ -51,6 +51,7 @@ $rows = dbQuery("
               Остановка: <?= htmlspecialchars($r["stop_name"] ?: ("ID ".$r["stop_id"])) ?> (<?= (int)$r["stop_id"] ?>)
             </div>
           </div>
+
           <a class="btn primary"
              href="/?stop_id=<?= (int)$r["stop_id"] ?>&route=<?= urlencode($r["route_name"]) ?>">
             Показать на карте
@@ -60,5 +61,20 @@ $rows = dbQuery("
     <?php endforeach; ?>
   <?php endif; ?>
 </section>
+<footer class="footer">
+  <p>
+    MosBus - сервис на основе
+    <a href="https://data.mos.ru/opendata/752?pageSize=10&pageIndex=0&isRecommendationData=false&isDynamic=false&version=8&release=82"
+       target="_blank"
+       rel="noopener noreferrer">
+      открытых данных
+    </a>
+    Правительства Москвы.
+	<p class="muted">
+    Пользуясь сайтом, вы соглашаетесь с
+    <a href="/privacy.php">обработкой персональных данных</a>.
+  </p>
+  </p>
+</footer>
 </body>
 </html>

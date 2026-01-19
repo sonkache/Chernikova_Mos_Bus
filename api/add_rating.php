@@ -1,82 +1,90 @@
 <?php
 require_once __DIR__ . "/../db.php";
 session_start();
+
 header('Content-Type: application/json; charset=utf-8');
 
 if (!isset($_SESSION['user_id'])) {
-  echo json_encode(["ok" => false, "error" => "auth_required"], JSON_UNESCAPED_UNICODE);
+  echo json_encode(["ok"=>false, "error"=>"auth_required"]);
   exit;
 }
+
 $user_id = (int)$_SESSION['user_id'];
-$u = dbQuery(
-  "SELECT status FROM users WHERE id = :id LIMIT 1",
-  ["id" => $user_id]
+$user = dbQuery(
+  "SELECT status FROM users WHERE id = :id",
+  ["id"=>$user_id]
 )->fetch(PDO::FETCH_ASSOC);
-if (!$u) {
-  echo json_encode(["ok" => false, "error" => "user_not_found"], JSON_UNESCAPED_UNICODE);
-  exit;
-}
-if (($u["status"] ?? "active") !== "active") {
-  echo json_encode(["ok" => false, "error" => "blocked"], JSON_UNESCAPED_UNICODE);
+
+if (!$user || $user['status'] === 'blocked') {
+  echo json_encode(["ok"=>false, "error"=>"blocked"]);
   exit;
 }
 
-$stop_id = (int)($_POST["stop_id"] ?? 0);
-$route_name = trim($_POST["route_name"] ?? "");
-$weekday = (int)($_POST["weekday"] ?? 0);
-$ride_time = trim($_POST["ride_time"] ?? "");
-$load_level = (int)($_POST["load_level"] ?? -1);
-$pensioners = (int)($_POST["pensioners"] ?? 0);
-$children = (int)($_POST["children"] ?? 0);
-$strollers = (int)($_POST["strollers"] ?? 0);
+$stop_id = (int)($_POST['stop_id'] ?? 0);
+$route   = trim($_POST['route_name'] ?? '');
+$weekday = (int)($_POST['weekday'] ?? 0);
+$ride_raw = trim($_POST['ride_time'] ?? '');
+$load  = (int)($_POST['load_level'] ?? 0);
+$pens  = (int)($_POST['pensioners'] ?? 0);
+$kids  = (int)($_POST['children'] ?? 0);
+$strol = (int)($_POST['strollers'] ?? 0);
 
-if ($stop_id <= 0 || $route_name === "") {
-  echo json_encode(["ok" => false, "error" => "bad_params"], JSON_UNESCAPED_UNICODE);
-  exit;
-}
-if ($weekday < 1 || $weekday > 7) {
-  echo json_encode(["ok" => false, "error" => "bad_weekday"], JSON_UNESCAPED_UNICODE);
-  exit;
-}
-if (!preg_match('/^\d{2}:\d{2}$/', $ride_time)) {
-  echo json_encode(["ok" => false, "error" => "bad_time_format"], JSON_UNESCAPED_UNICODE);
+if (
+  $stop_id <= 0 ||
+  $route === '' ||
+  $weekday < 1 || $weekday > 7
+) {
+  echo json_encode(["ok"=>false, "error"=>"bad_params"]);
   exit;
 }
 
-$ride_time_sql = $ride_time . ":00";
-$clamp = function ($v, $min, $max) {
-  return max($min, min($max, $v));
-};
+function roundTo30($time) {
+  if (!preg_match('/^(\d{2}):(\d{2})$/', $time, $m)) {
+    return null;
+  }
+  $h = (int)$m[1];
+  $min = (int)$m[2];
+  if ($h < 0 || $h > 23 || $min < 0 || $min > 59) {
+    return null;
+  }
+  $min = ($min < 30) ? 0 : 30;
+  return sprintf('%02d:%02d', $h, $min);
+}
 
-$load_level = $clamp($load_level, 0, 5);
-$pensioners = $clamp($pensioners, 0, 5);
-$children = $clamp($children, 0, 5);
-$strollers = $clamp($strollers, 0, 5);
+$ride_time = roundTo30($ride_raw);
+if ($ride_time === null) {
+  echo json_encode(["ok"=>false, "error"=>"bad_time"]);
+  exit;
+}
+
 try {
   dbQuery("
     INSERT INTO ratings
-      (user_id, stop_id, route_name, weekday, ride_time, load_level, pensioners, children, strollers)
+      (user_id, stop_id, route_name, weekday, ride_time,
+       load_level, pensioners, children, strollers, created_at)
     VALUES
-      (:u, :s, :r, :w, :t, :l, :p, :c, :st)
+      (:user_id, :stop_id, :route, :weekday, :ride_time,
+       :load, :pens, :kids, :strol, NOW())
   ", [
-    "u" => $user_id,
-    "s" => $stop_id,
-    "r" => $route_name,
-    "w" => $weekday,
-    "t" => $ride_time_sql,
-    "l" => $load_level,
-    "p" => $pensioners,
-    "c" => $children,
-    "st" => $strollers
+    "user_id"   => $user_id,
+    "stop_id"   => $stop_id,
+    "route"     => $route,
+    "weekday"   => $weekday,
+    "ride_time" => $ride_time,
+    "load"      => $load,
+    "pens"      => $pens,
+    "kids"      => $kids,
+    "strol"     => $strol
+  ]);
+  echo json_encode([
+    "ok" => true,
+    "ride_time" => $ride_time
   ]);
 
-  dbQuery(
-    "UPDATE users SET rating_count = rating_count + 1 WHERE id = :id",
-    ["id" => $user_id]
-  );
-
-  echo json_encode(["ok" => true], JSON_UNESCAPED_UNICODE);
-
 } catch (Throwable $e) {
-  echo json_encode(["ok" => false, "error" => $e->getMessage()], JSON_UNESCAPED_UNICODE);
+  http_response_code(500);
+  echo json_encode([
+    "ok"=>false,
+    "error"=>"db_error"
+  ]);
 }
