@@ -12,6 +12,7 @@ function safeFetchUserByEmail($email) {
              LIMIT 1",
             ["email" => $email]
         )->fetch(PDO::FETCH_ASSOC);
+
         if ($u) {
             $u["name"] = $u["name"] ?? "";
         }
@@ -98,3 +99,18 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         </form>
     </div>
 </section>
+<footer class="footer">
+  <p>
+    MosBus - сервис на основе
+    <a href="https://data.mos.ru/opendata/752?pageSize=10&pageIndex=0&isRecommendationData=false&isDynamic=false&version=8&release=82"
+       target="_blank"
+       rel="noopener noreferrer">
+      открытых данных
+    </a>
+    Правительства Москвы.
+	<p class="muted">
+    Пользуясь сайтом, вы соглашаетесь с
+    <a href="/privacy.php">обработкой персональных данных</a>.
+  </p>
+  </p>
+</footer>
