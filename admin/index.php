@@ -12,7 +12,7 @@ requireAdmin();
 <body>
 
 <header class="header">
-  <div class="logo">Админка</div>
+  <div class="logo">🛠 Админка</div>
   <nav class="menu">
     <a href="/">Сайт</a>
     <a href="/admin/users.php">Пользователи</a>

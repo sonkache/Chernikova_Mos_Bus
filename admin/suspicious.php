@@ -24,7 +24,7 @@ $day = dbQuery(
 <body>
 
 <header class="header">
-  <div class="logo">Админка</div>
+  <div class="logo">🛠 Админка</div>
   <nav class="menu">
     <a href="/admin/index.php">Главная</a>
     <a href="/admin/users.php">Пользователи</a>
